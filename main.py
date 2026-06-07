@@ -98,6 +98,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 @app.get("/")
+@app.head("/")
 def inicio():
     return {"mensaje": "API funcionando correctamente"}
 
