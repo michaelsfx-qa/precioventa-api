@@ -126,3 +126,5 @@ def calcular(data: CalculoRequest):
         })
 
     return {"resultados": resultados}
+
+    //test
