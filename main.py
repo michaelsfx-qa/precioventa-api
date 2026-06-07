@@ -126,4 +126,4 @@ def calcular(data: CalculoRequest):
             "precioUnitario": round(precio_unitario, 2)
         })
 
-    return {"resultados": resultados}
+    return {"codigo": "0000", "resultados": resultados}
