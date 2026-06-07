@@ -1,0 +1,35 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pruebas de Playwright
+        uses: actions/checkout@v4
+        with:
+          repository: michaelsfx-qa/framework-apis-playwright
+          token: ${{ secrets.PLAYWRIGHT_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Correr pruebas de Playwright
+        run: npx playwright test tests/API_precioventa.spec.ts
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy a Render
+        run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
