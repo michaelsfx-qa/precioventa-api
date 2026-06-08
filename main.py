@@ -127,5 +127,3 @@ def calcular(data: CalculoRequest):
         })
 
     return {"codigo": "0000", "resultados": resultados}
-
-    //
