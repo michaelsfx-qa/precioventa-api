@@ -19,7 +19,7 @@ app.add_middleware(
 
 def validar_numero(valor, campo, permite_cero=False):
     try:
-        numero = float(valor)
+        numero = float(str(valor).replace(',', '.'))
         if not permite_cero and numero <= 0:
             raise ValueError(campo)
         return numero
