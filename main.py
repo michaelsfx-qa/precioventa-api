@@ -167,3 +167,5 @@ def login(data: LoginRequest):
         )
 
     return {"codigo": "0000", "usuario": usuario[1]}
+
+    //
