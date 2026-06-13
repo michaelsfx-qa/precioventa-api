@@ -3,8 +3,19 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from typing import List
+import database
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def validar_numero(valor, campo, permite_cero=False):
     try:
@@ -107,6 +118,10 @@ def calcular(data: CalculoRequest):
     envio_por_producto = float(data.costoEnvio) / len(data.productos)
     resultados = []
 
+    def fmt(n):
+        n = round(n, 2)
+        return int(n) if n % 1 == 0 else n
+
     for producto in data.productos:
         costo = float(producto.costoProducto)
         cantidad = float(producto.cantidadProducto)
@@ -119,11 +134,36 @@ def calcular(data: CalculoRequest):
         precio_base = (dolares_objetivo * paralelo) / bcv
         monto_tarjeta = precio_base * (tarjeta / 100)
         precio_unitario = precio_base + monto_tarjeta + envio_por_producto
-        precio_total = precio_unitario * cantidad
 
         resultados.append({
             "nombreProducto": producto.nombreProducto,
-            "precioUnitario": round(precio_unitario, 2)
+            "precioUnitarioDolares": fmt(precio_unitario),
+            "precioUnitarioBolivares": fmt(precio_unitario * bcv)
         })
 
     return {"codigo": "0000", "resultados": resultados}
+
+
+class LoginRequest(BaseModel):
+    usuario: str = Field(..., min_length=1)
+    clave: str = Field(..., min_length=1)
+
+@app.post("/login")
+def login(data: LoginRequest):
+    conn = database.get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, usuario FROM usuarios WHERE usuario = %s AND clave = %s",
+        (data.usuario, data.clave)
+    )
+    usuario = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not usuario:
+        return JSONResponse(
+            status_code=401,
+            content={"error": {"codigo": 2001, "mensaje": "Usuario o clave incorrectos"}}
+        )
+
+    return {"codigo": "0000", "usuario": usuario[1]}
