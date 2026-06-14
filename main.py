@@ -8,8 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -29,7 +27,6 @@ def validar_numero(valor, campo, permite_cero=False):
 class Producto(BaseModel):
     nombreProducto: str = Field(...)
     costoProducto: str = Field(...)
-    cantidadProducto: str = Field(...)
 
     @field_validator("nombreProducto")
     def validar_nombre(cls, v):
@@ -41,14 +38,10 @@ class Producto(BaseModel):
     def validar_costo(cls, v):
         return str(validar_numero(v, "costoProducto"))
 
-    @field_validator("cantidadProducto")
-    def validar_cantidad(cls, v):
-        return str(validar_numero(v, "cantidadProducto"))
-
 class CalculoRequest(BaseModel):
     productos: List[Producto]
     tasaBcv: str = Field(...)
-    tasaParalelo: str = Field(...)
+    tasaUsdt: str = Field(...)
     ganancia: str = Field(...)
     costoEnvio: str = Field(...)
     comisionTarjeta: str = Field(...)
@@ -57,9 +50,9 @@ class CalculoRequest(BaseModel):
     def validar_bcv(cls, v):
         return str(validar_numero(v, "tasaBcv"))
 
-    @field_validator("tasaParalelo")
-    def validar_paralelo(cls, v):
-        return str(validar_numero(v, "tasaParalelo"))
+    @field_validator("tasaUsdt")
+    def validar_usdt(cls, v):
+        return str(validar_numero(v, "tasaUsdt"))
 
     @field_validator("ganancia")
     def validar_ganancia(cls, v):
@@ -79,13 +72,12 @@ class CalculoRequest(BaseModel):
 
 ERRORES = {
     "tasaBcv":          {"codigo": 1001, "mensaje": "El campo tasaBcv no es válido"},
-    "tasaParalelo":     {"codigo": 1002, "mensaje": "El campo tasaParalelo no es válido"},
+    "tasaUsdt":         {"codigo": 1002, "mensaje": "El campo tasaUsdt no es válido"},
     "ganancia":         {"codigo": 1003, "mensaje": "El campo ganancia no es válido"},
     "costoEnvio":       {"codigo": 1004, "mensaje": "El campo costoEnvio no es válido"},
     "comisionTarjeta":  {"codigo": 1005, "mensaje": "El campo comisionTarjeta no es válido"},
     "nombreProducto":   {"codigo": 1101, "mensaje": "El campo nombreProducto no es válido"},
     "costoProducto":    {"codigo": 1102, "mensaje": "El campo costoProducto no es válido"},
-    "cantidadProducto": {"codigo": 1103, "mensaje": "El campo cantidadProducto no es válido"},
 }
 
 @app.exception_handler(RequestValidationError)
@@ -124,14 +116,13 @@ def calcular(data: CalculoRequest):
 
     for producto in data.productos:
         costo = float(producto.costoProducto)
-        cantidad = float(producto.cantidadProducto)
         bcv = float(data.tasaBcv)
-        paralelo = float(data.tasaParalelo)
+        usdt = float(data.tasaUsdt)
         ganancia = float(data.ganancia)
         tarjeta = float(data.comisionTarjeta)
 
         dolares_objetivo = costo * (1 + ganancia / 100)
-        precio_base = (dolares_objetivo * paralelo) / bcv
+        precio_base = (dolares_objetivo * usdt) / bcv
         monto_tarjeta = precio_base * (tarjeta / 100)
         precio_unitario = precio_base + monto_tarjeta + envio_por_producto
 
@@ -167,5 +158,3 @@ def login(data: LoginRequest):
         )
 
     return {"codigo": "0000", "usuario": usuario[1]}
-
-    //
