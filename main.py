@@ -116,7 +116,6 @@ def obtener_tasas():
         bcv_data = bcv_response.json()
 
         usdt_key = database.obtener_config("usdt_api_key")
-        print("Key USDT usada:", usdt_key)
         usdt_response = requests.get(
             "https://api.dolarvzla.com/public/usdt/exchange-rate",
             headers={"x-dolarvzla-key": usdt_key}
