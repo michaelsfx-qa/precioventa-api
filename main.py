@@ -29,18 +29,8 @@ def validar_numero(valor, campo, permite_cero=False):
         raise ValueError(campo)
 
 class Producto(BaseModel):
-    nombreProducto: str = Field(...)
-    costoProducto: str = Field(...)
-
-    @field_validator("nombreProducto")
-    def validar_nombre(cls, v):
-        if not v or not v.strip():
-            raise ValueError("nombreProducto")
-        return v.strip()
-
-    @field_validator("costoProducto")
-    def validar_costo(cls, v):
-        return str(validar_numero(v, "costoProducto"))
+    nombreProducto: str = ""
+    costoProducto: str = ""
 
 class CalculoRequest(BaseModel):
     productos: List[Producto]
@@ -136,27 +126,49 @@ def obtener_tasas():
 
 @app.post("/calcular")
 def calcular(data: CalculoRequest):
-    envio_por_producto = float(data.costoEnvio) / len(data.productos)
-    resultados = []
-
     def fmt(n):
         n = round(n, 2)
         return int(n) if n % 1 == 0 else n
 
-    for producto in data.productos:
-        costo = float(producto.costoProducto)
+    try:
         bcv = float(data.tasaBcv)
         usdt = float(data.tasaUsdt)
         ganancia = float(data.ganancia)
         tarjeta = float(data.comisionTarjeta)
+        envio = float(data.costoEnvio)
+    except (ValueError, TypeError):
+        return JSONResponse(
+            status_code=422,
+            content={"error": {"codigo": 1000, "mensaje": "Datos generales inválidos"}}
+        )
 
+    productos_validos = []
+    for producto in data.productos:
+        nombre = producto.nombreProducto.strip() if producto.nombreProducto else ""
+        if not nombre:
+            continue
+        try:
+            costo = float(str(producto.costoProducto).replace(',', '.'))
+            if costo <= 0:
+                continue
+        except (ValueError, TypeError):
+            continue
+        productos_validos.append((nombre, costo))
+
+    if not productos_validos:
+        return {"codigo": "0000", "resultados": []}
+
+    envio_por_producto = envio / len(productos_validos)
+    resultados = []
+
+    for nombre, costo in productos_validos:
         dolares_objetivo = costo * (1 + ganancia / 100)
         precio_base = (dolares_objetivo * usdt) / bcv
         monto_tarjeta = precio_base * (tarjeta / 100)
         precio_unitario = precio_base + monto_tarjeta + envio_por_producto
 
         resultados.append({
-            "nombreProducto": producto.nombreProducto,
+            "nombreProducto": nombre,
             "precioUnitarioDolares": fmt(precio_unitario),
             "precioUnitarioBolivares": fmt(precio_unitario * bcv)
         })
