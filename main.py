@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from typing import List
 import database
+import requests
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -107,6 +108,31 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.head("/")
 def inicio():
     return {"mensaje": "API funcionando correctamente"}
+
+@app.get("/tasas")
+def obtener_tasas():
+    try:
+        bcv_response = requests.get("https://rates.dolarvzla.com/bcv/current.json")
+        bcv_data = bcv_response.json()
+
+        usdt_key = database.obtener_config("usdt_api_key")
+        usdt_response = requests.get(
+            "https://api.dolarvzla.com/public/usdt/exchange-rate",
+            headers={"x-dolarvzla-key": usdt_key}
+        )
+        usdt_data = usdt_response.json()
+
+        return {
+            "codigo": "0000",
+            "tasaBcvUsd": bcv_data["current"]["usd"],
+            "tasaBcvEur": bcv_data["current"]["eur"],
+            "tasaUsdt": usdt_data["current"]["sell"]
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"codigo": 3001, "mensaje": str(e)}}
+        )
 
 @app.post("/calcular")
 def calcular(data: CalculoRequest):

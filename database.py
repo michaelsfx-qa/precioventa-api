@@ -13,3 +13,12 @@ def get_connection():
         password=os.getenv("DB_PASSWORD"),
         sslmode="require"
     )
+
+def obtener_config(nombre):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT valor FROM config_api WHERE nombre = %s", (nombre,))
+    resultado = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return resultado[0] if resultado else None
