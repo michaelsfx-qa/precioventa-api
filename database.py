@@ -22,3 +22,32 @@ def obtener_config(nombre):
     cursor.close()
     conn.close()
     return resultado[0] if resultado else None
+
+def guardar_estado_calculadora(usuario_id, datos):
+    import json
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO calculadora_estado (usuario_id, datos, actualizado_en)
+        VALUES (%s, %s, NOW())
+        ON CONFLICT (usuario_id)
+        DO UPDATE SET datos = %s, actualizado_en = NOW()
+        """,
+        (usuario_id, json.dumps(datos), json.dumps(datos))
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def obtener_estado_calculadora(usuario_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT datos FROM calculadora_estado WHERE usuario_id = %s",
+        (usuario_id,)
+    )
+    resultado = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return resultado[0] if resultado else None

@@ -186,4 +186,31 @@ def login(data: LoginRequest):
             content={"error": {"codigo": 2001, "mensaje": "Usuario o clave incorrectos"}}
         )
 
-    return {"codigo": "0000", "usuario": usuario[1]}
+    return {"codigo": "0000", "usuario": usuario[1], "usuarioId": usuario[0]}
+
+
+class EstadoCalculadora(BaseModel):
+    usuarioId: int
+    datos: dict
+
+@app.post("/estado-calculadora")
+def guardar_estado(data: EstadoCalculadora):
+    try:
+        database.guardar_estado_calculadora(data.usuarioId, data.datos)
+        return {"codigo": "0000"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"codigo": 4001, "mensaje": "No se pudo guardar el estado"}}
+        )
+
+@app.get("/estado-calculadora/{usuario_id}")
+def obtener_estado(usuario_id: int):
+    try:
+        datos = database.obtener_estado_calculadora(usuario_id)
+        return {"codigo": "0000", "datos": datos}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"codigo": 4002, "mensaje": "No se pudo obtener el estado"}}
+        )
