@@ -182,17 +182,24 @@ class LoginRequest(BaseModel):
 
 @app.post("/login")
 def login(data: LoginRequest):
+    import bcrypt
     conn = database.get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, usuario FROM usuarios WHERE usuario = %s AND clave = %s",
-        (data.usuario, data.clave)
+        "SELECT id, usuario, clave FROM usuarios WHERE usuario = %s",
+        (data.usuario,)
     )
     usuario = cursor.fetchone()
     cursor.close()
     conn.close()
 
     if not usuario:
+        return JSONResponse(
+            status_code=401,
+            content={"error": {"codigo": 2001, "mensaje": "Usuario o clave incorrectos"}}
+        )
+
+    if not bcrypt.checkpw(data.clave.encode('utf-8'), usuario[2].encode('utf-8')):
         return JSONResponse(
             status_code=401,
             content={"error": {"codigo": 2001, "mensaje": "Usuario o clave incorrectos"}}
