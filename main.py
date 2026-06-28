@@ -5,7 +5,11 @@ from pydantic import BaseModel, Field, field_validator
 from typing import List
 import database
 import requests
+import os
 from fastapi.middleware.cors import CORSMiddleware
+from jose import jwt
+from datetime import datetime, timedelta
+
 
 app = FastAPI()
 
@@ -205,7 +209,15 @@ def login(data: LoginRequest):
             content={"error": {"codigo": 2001, "mensaje": "Usuario o clave incorrectos"}}
         )
 
-    return {"codigo": "0000", "usuario": usuario[1], "usuarioId": usuario[0]}
+    secret = os.getenv("JWT_SECRET")
+    payload = {
+        "usuarioId": usuario[0],
+        "usuario": usuario[1],
+        "exp": datetime.utcnow() + timedelta(hours=8)
+    }
+    token = jwt.encode(payload, secret, algorithm="HS256")
+
+    return {"codigo": "0000", "usuario": usuario[1], "token": token}
 
 
 class EstadoCalculadora(BaseModel):
