@@ -9,7 +9,18 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt
 from datetime import datetime, timedelta
+from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+security = HTTPBearer()
+
+def verificar_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        secret = os.getenv("JWT_SECRET")
+        payload = jwt.decode(credentials.credentials, secret, algorithms=["HS256"])
+        return payload
+    except Exception:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
 
 app = FastAPI()
 
@@ -225,7 +236,7 @@ class EstadoCalculadora(BaseModel):
     datos: dict
 
 @app.post("/estado-calculadora")
-def guardar_estado(data: EstadoCalculadora):
+def guardar_estado(data: EstadoCalculadora, payload: dict = Depends(verificar_token)):
     try:
         database.guardar_estado_calculadora(data.usuarioId, data.datos)
         return {"codigo": "0000"}
@@ -236,7 +247,7 @@ def guardar_estado(data: EstadoCalculadora):
         )
 
 @app.get("/estado-calculadora/{usuario_id}")
-def obtener_estado(usuario_id: int):
+def obtener_estado(usuario_id: int, payload: dict = Depends(verificar_token)):
     try:
         datos = database.obtener_estado_calculadora(usuario_id)
         return {"codigo": "0000", "datos": datos}
