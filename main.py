@@ -237,6 +237,11 @@ class EstadoCalculadora(BaseModel):
 
 @app.post("/estado-calculadora")
 def guardar_estado(data: EstadoCalculadora, payload: dict = Depends(verificar_token)):
+    if payload.get("usuarioId") != data.usuarioId:
+        return JSONResponse(
+            status_code=403,
+            content={"error": {"codigo": 4003, "mensaje": "No tienes permiso para modificar estos datos"}}
+        )
     try:
         database.guardar_estado_calculadora(data.usuarioId, data.datos)
         return {"codigo": "0000"}
@@ -248,6 +253,11 @@ def guardar_estado(data: EstadoCalculadora, payload: dict = Depends(verificar_to
 
 @app.get("/estado-calculadora/{usuario_id}")
 def obtener_estado(usuario_id: int, payload: dict = Depends(verificar_token)):
+    if payload.get("usuarioId") != usuario_id:
+        return JSONResponse(
+            status_code=403,
+            content={"error": {"codigo": 4003, "mensaje": "No tienes permiso para acceder a estos datos"}}
+        )
     try:
         datos = database.obtener_estado_calculadora(usuario_id)
         return {"codigo": "0000", "datos": datos}
