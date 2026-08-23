@@ -131,7 +131,7 @@ def obtener_tasas():
             "codigo": "0000",
             "tasaBcvUsd": bcv_data["current"]["usd"],
             "tasaBcvEur": bcv_data["current"]["eur"],
-            "tasaUsdt": usdt_data["current"]["sell"]
+            "tasaUsdt": usdt_data["current"]["buy"]
         }
     except Exception as e:
         return JSONResponse(
