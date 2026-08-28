@@ -142,8 +142,7 @@ def obtener_tasas():
 @app.post("/calcular")
 def calcular(data: CalculoRequest):
     def fmt(n):
-        n = round(n, 2)
-        return int(n) if n % 1 == 0 else n
+        return round(n)
 
     try:
         bcv = float(data.tasaBcv)
